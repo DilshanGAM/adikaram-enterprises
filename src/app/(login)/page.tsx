@@ -74,7 +74,7 @@ export default function LoginPage() {
 					</Card>
 				</div>
 			</main>
-			<footer className="flex gap-6 flex-wrap items-center justify-center mt-6 text-white">
+			<footer className="fixed bottom-0  flex gap-6 flex-wrap items-center justify-center mt-6 text-white">
 				<p>&copy; 2024 Adikaram Enterprises</p>
 				<p>All rights reserved.</p>
 			</footer>

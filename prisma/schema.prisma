@@ -24,3 +24,16 @@ model User {
   password String @default("$2a$12$RdUwAbGF35Xn8/wEAcG4Q.gADhB0LiLGDUKsaRrRkuCFafavKb0x2")
   status String @default("active")
 }
+
+model Product {
+  key String @id @unique
+  name String
+  stock Int
+  container_type String
+  uom String
+  volume Float
+  flavor String
+  default_labeled_price Float
+  product_image String @default("/default.jpg")
+  
+}

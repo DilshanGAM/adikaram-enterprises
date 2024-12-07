@@ -124,7 +124,7 @@ export default function AdminUsersPage() {
 			setIsDeleteModalOpen(false);
 			setUsersLoading(true); // Refresh users after deletion
             //check is logout is needed in the res
-            if(res.data.logoutNeeded) {
+            if(res.data.logout) {
                 localStorage.removeItem("token");
                 localStorage.removeItem("user");
                 window.location.href = "/login";

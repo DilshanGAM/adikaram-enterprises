@@ -8,15 +8,32 @@ import { useState } from "react";
 import "./login.css";
 import TypingAnimation from "@/components/ui/typing-animation";
 import BlurIn from "@/components/ui/blur-in";
+import axios from "axios";
+import toast from "react-hot-toast";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
 	const [loading, setLoading] = useState(false);
-
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const router = useRouter();
+    
 	const handleLogin = () => {
+        toast.success("res.data.message");
 		setLoading(true);
-		setTimeout(() => {
-			setLoading(false);
-		}, 2000); // Simulate loading
+		axios.post("/api/auth/login", {
+            email: email,
+            password: password
+        }).then((res) => {
+            toast.success(res.data.message);
+            localStorage.setItem("token", res.data.token);
+            localStorage.setItem("user", JSON.stringify(res.data.user));
+            setLoading(false);
+            if(res.data.user.role === "admin") router.push("/admin");
+        }).catch((err) => { 
+            toast.error(err.response.data.message);
+            setLoading(false);
+        });
 	};
 
 	return (
@@ -50,6 +67,7 @@ export default function LoginPage() {
 										id="email"
 										placeholder="Enter your email"
 										required
+                                        onChange={(e) => setEmail(e.target.value)}
 									/>
 								</div>
 								<div>
@@ -59,6 +77,7 @@ export default function LoginPage() {
 										id="password"
 										placeholder="Enter your password"
 										required
+                                        onChange={(e) => setPassword(e.target.value)}
 									/>
 								</div>
 								<Button

@@ -21,5 +21,6 @@ model User {
   address String
   title String
   role String
-  password String
+  password String @default("$2a$12$RdUwAbGF35Xn8/wEAcG4Q.gADhB0LiLGDUKsaRrRkuCFafavKb0x2")
+  status String @default("active")
 }

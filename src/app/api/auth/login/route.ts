@@ -19,6 +19,9 @@ export async function POST(req: NextRequest) {
 		const match = await bcrypt.compare(password, user.password);
 		if (match) {
 			//generate jwt
+            if(user.status !== "active"){
+                return NextResponse.json({message: "Account is in "+user.status+" mode. Please contact the admin!", status: 401});
+            }
 			const payload = {
 				email: user.email,
 				name: user.name,

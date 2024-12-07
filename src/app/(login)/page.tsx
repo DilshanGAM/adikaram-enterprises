@@ -19,17 +19,16 @@ export default function LoginPage() {
     const router = useRouter();
     
 	const handleLogin = () => {
-        toast.success("res.data.message");
 		setLoading(true);
 		axios.post("/api/auth/login", {
             email: email,
             password: password
         }).then((res) => {
-            toast.success(res.data.message);
             localStorage.setItem("token", res.data.token);
             localStorage.setItem("user", JSON.stringify(res.data.user));
             setLoading(false);
             if(res.data.user.role === "admin") router.push("/admin");
+            if(res.data.user.role === "manager") router.push("/admin");
         }).catch((err) => { 
             toast.error(err.response.data.message);
             setLoading(false);

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import {
 	FaCog,
@@ -26,8 +26,10 @@ export default function AdminLayout({
 	};
 
 	// Check for token
-	const token = localStorage.getItem("token");
-	if (!token) router.push("/login");
+	useEffect(() => {
+		const token = localStorage.getItem("token");
+		if (!token) router.push("/login");
+	}, []);
 
 	return (
 		<div className="flex h-screen">

@@ -37,7 +37,9 @@ export async function POST(req: NextRequest) {
 
 			return NextResponse.json({ token , user : payload , message: "Login successful"}, {status: 200});
 		}else{
-            return NextResponse.json({message: "Invalid password", status: 401});
+            return NextResponse.json({message: "Invalid password"},{ status: 401});
         }
-	}
+	}else{
+        return NextResponse.json({message: "User not found"}, {status: 404});
+    }
 }

@@ -14,12 +14,12 @@ export default function RootLayout({
   const isActive = (route: string) => pathname === route;
 
   return (
-    <div className="w-full pt-[75px]">
+    <div className="w-full pt-[75px] relative">
       {/* Navigation Buttons */}
-      <div className="flex  p-4 h-[75px]  w-full fixed top-0 justify-center">
+      <div className="flex bg-[#f3f4f6]  py-4 h-[75px]  w-full absolute top-0 left-0 justify-center items-center">
         <Link href="/admin/stock">
           <button
-            className={`px-4 py-2 rounded mx-4 ${
+            className={`px-4 py-2 rounded mx-2 ${
               isActive("/admin/stock")
                 ? "bg-pepsiBlue text-white"
                 : "bg-gray-200 hover:bg-gray-300"
@@ -30,7 +30,7 @@ export default function RootLayout({
         </Link>
         <Link href="/admin/stock/batches">
           <button
-            className={`px-4 py-2 rounded mx-4 ${
+            className={`px-4 py-2 rounded mx-2 ${
               isActive("/admin/stock/batches")
                 ? "bg-pepsiBlue text-white"
                 : "bg-gray-200 hover:bg-gray-300"

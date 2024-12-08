@@ -30,10 +30,11 @@ model Product {
   name String
   stock Int
   container_type String
-  uom String
+  uom Int
   volume Float
-  flavor String
+  flavour String
   default_labeled_price Float
-  product_image String @default("/default.jpg")
-  
+  default_cost Float
+  status String @default("active")
+  product_image String @default("/default.jpg")  
 }

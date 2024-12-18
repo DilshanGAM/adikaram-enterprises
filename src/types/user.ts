@@ -21,3 +21,17 @@ export interface ProductType{
     product_image: string;
     status: string;
 }
+export interface BatchType{
+    batch_id: number;
+    product_key: string;
+    uom : number;
+    packs: number;
+    loose: number;
+    mfd:Date;
+    exp:Date;
+    cost: number;
+    labeled_price: number;
+    purchase_invoice_id: string;
+    date: Date;
+    addedBy: string;
+}

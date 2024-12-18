@@ -1,6 +1,5 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
@@ -14,27 +13,46 @@ datasource db {
 }
 
 model User {
-  email String @id @unique
-  name String
-  phone String
-  whatsapp String
-  address String
-  title String
-  role String
-  password String @default("$2a$12$RdUwAbGF35Xn8/wEAcG4Q.gADhB0LiLGDUKsaRrRkuCFafavKb0x2")
-  status String @default("active")
+  email     String    @id @unique
+  name      String
+  phone     String
+  whatsapp  String
+  address   String
+  title     String
+  role      String
+  password  String    @default("$2a$12$RdUwAbGF35Xn8/wEAcG4Q.gADhB0LiLGDUKsaRrRkuCFafavKb0x2")
+  status    String    @default("active")
+  batches   Batch[]   // Relation to Batch model
 }
 
 model Product {
-  key String @id @unique
-  name String
-  stock Int
-  container_type String
-  uom Int
-  volume Float
-  flavour String
+  key                   String   @id @unique
+  name                 String
+  stock                Int
+  container_type       String
+  uom                  Int
+  volume               Float
+  flavour              String
   default_labeled_price Float
-  default_cost Float
-  status String @default("active")
-  product_image String @default("/default.jpg")  
+  default_cost         Float
+  status               String    @default("active")
+  product_image        String    @default("/default.jpg")
+  batches              Batch[]   // Relation to Batch model
+}
+
+model Batch {
+  batch_id             Int       @id @default(autoincrement())
+  product_key          String
+  product              Product   @relation(fields: [product_key], references: [key])
+  uom                  Int
+  packs                Int
+  loose                Int
+  mfd                  DateTime
+  exp                  DateTime
+  cost                 Float
+  labeled_price        Float
+  purchase_invoice_id  String
+  date                 DateTime  @default(now())
+  addedBy              String
+  user                 User      @relation(fields: [addedBy], references: [email])
 }

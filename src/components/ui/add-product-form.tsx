@@ -71,7 +71,6 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
 			const {data , error} = await supabase.storage.from("image-bucket").upload(filename, file);
 
 			if(error){
-				console.log(error);
 				toast.error("Failed to upload image");
 				setLoading(false);
 				return;
@@ -80,7 +79,6 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
 				if(file){
 					formData.product_image = file?.publicUrl;
 					toast.success("Image uploaded please wait ....");
-					console.log(file.publicUrl);
 				}else{
 					toast.error("Failed to get image url");
 					setLoading(false);

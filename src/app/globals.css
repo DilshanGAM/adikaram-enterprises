@@ -70,3 +70,19 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+
+
+.custom-scrollbar::-webkit-scrollbar {
+  height: 4px; /* Adjust scrollbar height */
+  width: 4px; /* Adjust scrollbar width */
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #ccc; /* Thumb color */
+  border-radius: 4px; /* Thumb roundness */
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f0f0f0; /* Track color */
+}

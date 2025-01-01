@@ -21,81 +21,79 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import Pagination from "@/components/ui/paginationNew";
 import ProductForm from "@/components/ui/add-product-form";
 import { ProductType } from "@/types/user";
+import TableSkeletonLoader from "@/components/ui/table-skeleton-loader";
 
 export default function StockAdminPage() {
+  const PAGE_SIZE = 10; 
   const [products, setProducts] = useState([]);
-  const [filteredProducts, setFilteredProducts] = useState([]);
   const [search, setSearch] = useState("");
   const [productsLoading, setProductsLoading] = useState(true);
   const [isAddEditModalOpen, setIsAddEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState(null); // For editing products
-  const [deleteProductKey, setDeleteProductKey] = useState(""); // Key entered for confirmation
-  const [productToDelete, setProductToDelete] = useState<ProductType | null>(
-    null
-  ); // Product to delete
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [deleteProductKey, setDeleteProductKey] = useState("");
+  const [productToDelete, setProductToDelete] = useState<ProductType | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
 
-  // Fetch products from the API
+  const fetchProducts = async () => {
+    setProductsLoading(true);
+    const token = localStorage.getItem("token");
+    try {
+      const res = await axios.get("/api/products", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        params: {
+          page: currentPage,
+          pageSize: PAGE_SIZE,
+          search,
+        },
+      });
+      setProducts(res.data.products);
+      setTotalPages(res.data.pagination.totalPages);
+      setTotalItems(res.data.pagination.totalItems);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to fetch products");
+    } finally {
+      setProductsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchProducts = async () => {
-      const token = localStorage.getItem("token");
-      try {
-        const res = await axios.get("/api/products", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        setProducts(res.data.products);
-        setFilteredProducts(res.data.products);
-      } catch (err: any) {
-        toast.error(err.response?.data?.message || "Failed to fetch products");
-      } finally {
-        setProductsLoading(false);
-      }
-    };
+    fetchProducts();
+  }, [currentPage, search]);
 
-    if (productsLoading) fetchProducts();
-  }, [productsLoading]);
-
-  // Handle search input
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value);
-    const filtered = products.filter(
-      (product: any) =>
-        product.name.toLowerCase().includes(e.target.value.toLowerCase()) ||
-        product.key.toLowerCase().includes(e.target.value.toLowerCase())
-    );
-    setFilteredProducts(filtered);
+    setCurrentPage(1); // Reset to the first page on search
   };
 
-  // Open modal for adding a new product
   const handleAddProduct = () => {
-    setSelectedProduct(null); // No product selected for adding
+    setSelectedProduct(null);
     setIsAddEditModalOpen(true);
   };
 
-  // Open modal for editing an existing product
   const handleEditProduct = (product: any) => {
-    setSelectedProduct(product); // Set the product to be edited
+    setSelectedProduct(product);
     setIsAddEditModalOpen(true);
   };
 
-  // Close modal and refresh the product list
   const handleModalClose = () => {
     setIsAddEditModalOpen(false);
-    setProductsLoading(true); // Refresh products after adding/editing
+    fetchProducts();
   };
 
-  // Open delete confirmation modal
   const handleDeleteProduct = (product: any) => {
     setProductToDelete(product);
-    setDeleteProductKey(""); // Clear the input field
+    setDeleteProductKey("");
     setIsDeleteModalOpen(true);
   };
 
-  // Confirm and delete product
   const confirmDeleteProduct = async () => {
     if (deleteProductKey !== productToDelete?.key) {
       toast.error("Entered key does not match.");
@@ -111,7 +109,7 @@ export default function StockAdminPage() {
       });
       toast.success("Product deleted successfully.");
       setIsDeleteModalOpen(false);
-      setProductsLoading(true); // Refresh products after deletion
+      fetchProducts();
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to delete product.");
     }
@@ -121,14 +119,10 @@ export default function StockAdminPage() {
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">Stock Admin Page</h1>
 
-      {/* Loading Message */}
       {productsLoading ? (
-        <div className="text-center text-lg font-medium text-gray-700">
-          Loading, please wait...
-        </div>
+         <TableSkeletonLoader />
       ) : (
         <>
-          {/* Search and Actions */}
           <div className="flex items-center gap-4 mb-4">
             <Input
               placeholder="Search by product name or key"
@@ -136,7 +130,7 @@ export default function StockAdminPage() {
               onChange={handleSearch}
               className="w-full max-w-md"
             />
-            <Button onClick={() => setProductsLoading(true)}>Refresh</Button>
+            <Button onClick={fetchProducts}>Refresh</Button>
             <Dialog open={isAddEditModalOpen} onOpenChange={setIsAddEditModalOpen}>
               <DialogTrigger asChild>
                 <Button onClick={handleAddProduct}>Add Product</Button>
@@ -147,20 +141,83 @@ export default function StockAdminPage() {
                     {selectedProduct ? "Edit Product" : "Add Product"}
                   </DialogTitle>
                 </DialogHeader>
-                <ProductForm
-                  product={selectedProduct}
-                  onSuccess={handleModalClose}
-                />
+                <ProductForm product={selectedProduct} onSuccess={handleModalClose} />
               </DialogContent>
             </Dialog>
           </div>
 
-          {/* Product Table */}
-          <div className="overflow-auto">
+
+          <div className="lg:hidden grid grid-cols-1 gap-4">
+  {products.length > 0 ? (
+    products.map((product: any) => (
+      <div
+        key={product.key}
+        className="p-4 border rounded shadow-sm bg-white flex flex-col gap-2"
+      >
+        <div className="flex items-center gap-4">
+          <img
+            src={product.product_image}
+            alt={product.name}
+            className="w-16 h-16 object-cover rounded"
+          />
+          <div className="flex-1">
+            <h3 className="font-bold text-lg">{product.name}</h3>
+            <p className="text-sm text-gray-500">Key: {product.key}</p>
+          </div>
+        </div>
+        <div className="flex justify-between text-sm">
+          <strong>Stock:</strong> {product.stock}
+        </div>
+        <div className="flex justify-between text-sm">
+          <strong>Container Type:</strong> {product.container_type}
+        </div>
+        <div className="flex justify-between text-sm">
+          <strong>UOM:</strong> {product.uom}
+        </div>
+        <div className="flex justify-between text-sm">
+          <strong>Volume:</strong> {product.volume}
+        </div>
+        <div className="flex justify-between text-sm">
+          <strong>Flavour:</strong> {product.flavour}
+        </div>
+        <div className="flex justify-between text-sm">
+          <strong>Price:</strong> {product.default_labeled_price}
+        </div>
+        <div className="flex justify-between text-sm">
+          <strong>Cost:</strong> {product.default_cost}
+        </div>
+        <div className="flex justify-between text-sm">
+          <strong>Status:</strong> {product.status}
+        </div>
+        <div className="mt-2 flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleEditProduct(product)}
+          >
+            Edit
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => handleDeleteProduct(product)}
+          >
+            Delete
+          </Button>
+        </div>
+      </div>
+    ))
+  ) : (
+    <div className="text-center text-gray-500">No products found.</div>
+  )}
+</div>
+
+
+          <div className="overflow-auto hidden lg:block">
             <Table>
               <TableCaption>A list of all products in stock.</TableCaption>
               <TableHeader>
-                <TableRow>
+                <TableRow className="bg-[#dbdde2] hover:bg-[#dbdde2] font-bold text-[#4B5563]">
                   <TableHead>Image</TableHead>
                   <TableHead>Key</TableHead>
                   <TableHead>Name</TableHead>
@@ -176,16 +233,14 @@ export default function StockAdminPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredProducts.length > 0 ? (
-                  filteredProducts.map((product: any) => (
+                {products.length > 0 ? (
+                  products.map((product: any) => (
                     <TableRow key={product.key}>
                       <TableCell>
                         <img
                           src={product.product_image}
                           alt={product.name}
                           className="w-12 h-12 object-cover rounded"
-                          width={50}
-                          height={50}
                         />
                       </TableCell>
                       <TableCell>{product.key}</TableCell>
@@ -229,15 +284,24 @@ export default function StockAdminPage() {
             </Table>
           </div>
 
-          {/* Delete Confirmation Modal */}
+          <div className="mt-4 flex items-center justify-between">
+            <span className="text-sm text-gray-500">
+              Showing {products.length} of {totalItems} products
+            </span>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={(page) => setCurrentPage(page)}
+            />
+          </div>
+
           <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Confirm Deletion</DialogTitle>
               </DialogHeader>
               <p className="mb-4">
-                Enter the key of the product (
-                <strong>{productToDelete?.key}</strong>) to confirm deletion.
+                Enter the key of the product (<strong>{productToDelete?.key}</strong>) to confirm deletion.
               </p>
               <Input
                 placeholder="Enter product key"
@@ -246,10 +310,7 @@ export default function StockAdminPage() {
                 className="mb-4"
               />
               <div className="flex justify-end gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsDeleteModalOpen(false)}
-                >
+                <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)}>
                   Cancel
                 </Button>
                 <Button variant="destructive" onClick={confirmDeleteProduct}>

@@ -14,15 +14,15 @@ export default function RootLayout({
   const isActive = (route: string) => pathname === route;
 
   return (
-    <div className="w-full pt-[75px] relative">
+    <div className="w-full pt-[75px] relative ">
       {/* Navigation Buttons */}
-      <div className="flex bg-[#f3f4f6]  py-4 h-[75px]  w-full absolute top-0 left-0 justify-center items-center">
+      <div className="flex bg-[#f3f4f6]  pt-4  w-full absolute top-0 left-0  items-center border-b-gray-200 border-solid border-b-2">
         <Link href="/admin/stock">
           <button
-            className={`px-4 py-2 rounded mx-2 ${
+            className={`px-4 py-2  mx-2 ${
               isActive("/admin/stock")
-                ? "bg-pepsiBlue text-white"
-                : "bg-gray-200 hover:bg-gray-300"
+                ? "border-b-pepsiBlue border-solid border-b-2"
+                : " hover:bg-gray-300"
             }`}
           >
             Products
@@ -30,10 +30,10 @@ export default function RootLayout({
         </Link>
         <Link href="/admin/stock/batches">
           <button
-            className={`px-4 py-2 rounded mx-2 ${
+            className={`px-4 py-2  mx-2 ${
               isActive("/admin/stock/batches")
-                ? "bg-pepsiBlue text-white"
-                : "bg-gray-200 hover:bg-gray-300"
+                ? "border-b-pepsiBlue border-solid border-b-2"
+                : " hover:bg-gray-300"
             }`}
           >
             Batches

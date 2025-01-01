@@ -26,9 +26,10 @@ export default function LoginPage() {
         }).then((res) => {
             localStorage.setItem("token", res.data.token);
             localStorage.setItem("user", JSON.stringify(res.data.user));
-            setLoading(false);
             if(res.data.user.role === "admin") router.push("/admin");
             if(res.data.user.role === "manager") router.push("/admin");
+			if(res.data.user.role === "staff") router.push("/staff");
+			setLoading(false);
         }).catch((err) => {
             toast.error(err.response?.data?.message || "Failed to login");
             setLoading(false);

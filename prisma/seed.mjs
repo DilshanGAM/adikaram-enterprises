@@ -1,8 +1,12 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
 async function main() {
+  const password = '123'; 
+  const hashedPassword = await bcrypt.hash(password, 10);
+
   await prisma.user.create({
     data: {
       email: "shashika@adikaram.com",
@@ -12,7 +16,8 @@ async function main() {
       address: "Maharagama, Sri Lanka",
       title: "System Administrator",
       role: "admin",
-      password: "$2y$12$W3ulNwQG7ssME77.nA.SQO7E5gUL3yC9i9ZmMA1a6Fg2/9BHV1HqC",
+      password: hashedPassword,
+      status: "active",
     },
   });
 }

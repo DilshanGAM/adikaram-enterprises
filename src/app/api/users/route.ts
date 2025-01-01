@@ -1,110 +1,146 @@
 import { UserType } from "@/types/user";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 const prisma = new PrismaClient();
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-	let userHeader = req.headers.get("user");
-	let user: UserType | null = userHeader ? JSON.parse(userHeader) : null;
-	if (user) {
-		if (user?.role === "admin" || user?.role === "manager") {
-			//find all users using prisma
-			try {
-				const users = await prisma.user.findMany({
-					where: user.role === "manager" ? { role: { not: "admin" } } : {},
-				});
-				prisma.$disconnect();
-				return NextResponse.json({ message: "Users found", users: users });
-			} catch (e) {
-				return NextResponse.json(
-					{ message: "Error fetching users", error: e },
-					{ status: 500 }
-				);
-			}
-		} else {
-			return NextResponse.json(
-				{ message: "Unauthorized", user: user },
-				{ status: 401 }
-			);
-		}
-	} else {
-		return NextResponse.json({ message: "User not found" }, { status: 404 });
-	}
+    const searchParams = req.nextUrl.searchParams;
+    const page = parseInt(searchParams.get("page") || "1");
+    const pageSize = parseInt(searchParams.get("pageSize") || "10");
+    const search = searchParams.get("search") || "";
+
+    try {
+        // Build the where clause for search
+		const whereClause = search ? {
+			OR: [
+				{ name: { contains: search, mode: Prisma.QueryMode.insensitive } },
+				{ email: { contains: search, mode: Prisma.QueryMode.insensitive } },
+				{ role: { contains: search, mode: Prisma.QueryMode.insensitive } }
+			]
+		} : {};
+
+        // Get total count for pagination
+        const totalItems = await prisma.user.count({
+            where: whereClause
+        });
+
+        // Get paginated results
+        const users = await prisma.user.findMany({
+            where: whereClause,
+            skip: (page - 1) * pageSize,
+            take: pageSize,
+            orderBy: {
+                name: 'asc'
+            }
+        });
+
+        const totalPages = Math.ceil(totalItems / pageSize);
+
+        return NextResponse.json({
+            users,
+            currentPage: page,
+            totalPages,
+            totalItems
+        });
+    } catch (e: any) {
+        return NextResponse.json(
+            { message: "Error fetching users", error: e.message },
+            { status: 500 }
+        );
+    } finally {
+        await prisma.$disconnect();
+    }
 }
 
 export async function POST(req: NextRequest) {
-	const userHeader = req.headers.get("user");
-	const user: UserType | null = userHeader ? JSON.parse(userHeader) : null;
+    const userHeader = req.headers.get("user");
+    const user: UserType | null = userHeader ? JSON.parse(userHeader) : null;
 
-	if (!user) {
-		return NextResponse.json({ message: "User not found" }, { status: 404 });
-	}
+    if (!user) {
+        return NextResponse.json({ message: "User not found" }, { status: 404 });
+    }
 
-	if (user.role !== "admin" && user.role !== "manager") {
-		return NextResponse.json(
-			{ message: "Unauthorized: Only admin and manager can create accounts" },
-			{ status: 401 }
-		);
-	}
+    if (user.role !== "admin" && user.role !== "manager") {
+        return NextResponse.json(
+            { message: "Unauthorized: Only admin and manager can create accounts" },
+            { status: 401 }
+        );
+    }
 
-	try {
-		const body = await req.json();
+    try {
+        const body = await req.json();
 
-		const { email, name, phone, whatsapp, address, title, role, status } = body;
+        const { email, name, phone, whatsapp, address, title, role, status, password } = body;
 
-		// Validation
-		if (!email || !name || !role) {
-			return NextResponse.json(
-				{ message: "Missing required fields: email, name, or role" },
-				{ status: 400 }
-			);
-		}
+        // Validation
+        if (!email || !name || !role || !password) {
+            return NextResponse.json(
+                { message: "Missing required fields: email, name, role, or password" },
+                { status: 400 }
+            );
+        }
 
-		// Restrict roles based on the requesting user's role
-		const allowedRoles =
-			user.role === "admin"
-				? ["admin", "manager", "staff"]
-				: ["manager", "staff"];
+        // Password validation
+        if (password.length < 6) {
+            return NextResponse.json(
+                { message: "Password must be at least 6 characters long" },
+                { status: 400 }
+            );
+        }
 
-		if (!allowedRoles.includes(role)) {
-			return NextResponse.json(
-				{
-					message: `Unauthorized: ${
-						user.role
-					}s can only create the following roles: ${allowedRoles.join(", ")}`,
-				},
-				{ status: 403 }
-			);
-		}
+        // Restrict roles based on the requesting user's role
+        const allowedRoles =
+            user.role === "admin"
+                ? ["admin", "manager", "staff"]
+                : ["manager", "staff"];
 
-		// Create user
-		const newUser = await prisma.user.create({
-			data: {
-				email,
-				name,
-				phone,
-				whatsapp,
-				address,
-				title,
-				role,
-				status: status || "active",
-			},
-		});
+        if (!allowedRoles.includes(role)) {
+            return NextResponse.json(
+                {
+                    message: `Unauthorized: ${
+                        user.role
+                    }s can only create the following roles: ${allowedRoles.join(", ")}`,
+                },
+                { status: 403 }
+            );
+        }
 
-		prisma.$disconnect();
-		return NextResponse.json(
-			{ message: "User created successfully", user: newUser },
-			{ status: 201 }
-		);
-	} catch (e: any) {
-		prisma.$disconnect();
-		return NextResponse.json(
-			{ message: "Error creating user", error: e.message },
-			{ status: 500 }
-		);
-	}
+        // Hash the password before storing
+        const bcrypt = require('bcryptjs');
+        const hashedPassword = await bcrypt.hash(password, 12);
+
+        // Create user with hashed password
+        const newUser = await prisma.user.create({
+            data: {
+                email,
+                name,
+                phone,
+                whatsapp,
+                address,
+                title,
+                role,
+                status: status || "active",
+                password: hashedPassword
+            },
+        });
+
+        // Remove password from response
+        const { password: _, ...userWithoutPassword } = newUser;
+
+        prisma.$disconnect();
+        return NextResponse.json(
+            { message: "User created successfully", user: userWithoutPassword },
+            { status: 201 }
+        );
+    } catch (e: any) {
+        prisma.$disconnect();
+        return NextResponse.json(
+            { message: "Error creating user", error: e.message },
+            { status: 500 }
+        );
+    }
 }
 
 export async function PUT(req: NextRequest) {

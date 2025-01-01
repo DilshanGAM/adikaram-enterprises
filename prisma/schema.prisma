@@ -1,6 +1,5 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
@@ -14,27 +13,157 @@ datasource db {
 }
 
 model User {
-  email String @id @unique
-  name String
-  phone String
-  whatsapp String
-  address String
-  title String
-  role String
-  password String @default("$2a$12$RdUwAbGF35Xn8/wEAcG4Q.gADhB0LiLGDUKsaRrRkuCFafavKb0x2")
-  status String @default("active")
+  email     String    @id @unique
+  name      String
+  phone     String
+  whatsapp  String
+  address   String
+  title     String
+  role      String
+  password  String    @default("$2a$12$RdUwAbGF35Xn8/wEAcG4Q.gADhB0LiLGDUKsaRrRkuCFafavKb0x2")
+  status    String    @default("active")
+  batches   Batch[] 
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt @default(now())
 }
 
 model Product {
-  key String @id @unique
-  name String
-  stock Int
-  container_type String
-  uom Int
-  volume Float
-  flavour String
+  key                   String   @id @unique
+  name                 String
+  stock                Int
+  container_type       String
+  uom                  Int
+  volume               Float
+  flavour              String
   default_labeled_price Float
-  default_cost Float
-  status String @default("active")
-  product_image String @default("/default.jpg")  
+  default_cost         Float
+  status               String    @default("active")
+  product_image        String    @default("/default.jpg")
+  batches              Batch[] 
+  order_products OrderHasProducts[]
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt @default(now())
+} 
+
+model Batch {
+  batch_id             Int       @id @default(autoincrement())
+  product_key          String
+  product              Product   @relation(fields: [product_key], references: [key])
+  uom                  Int
+  packs                Int
+  loose                Int
+  mfd                  DateTime
+  exp                  DateTime
+  cost                 Float
+  labeled_price        Float
+  purchase_invoice_id  String
+  date                 DateTime  @default(now())
+  addedBy              String
+  user                 User      @relation(fields: [addedBy], references: [email])
+}
+
+model Route {
+  id            String   @id @default(uuid())
+  name          String
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+  route_shops   RouteHasShops[]
+  trips         Trip[]
+}
+
+model Shop {
+  id               String   @id @default(uuid())
+  name             String
+  address          String
+  whatsapp_number  String
+  phone_number     String
+  lat              Float
+  long             Float
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+  route_shops      RouteHasShops[]
+  orders           Order[]
+  transactions     Transaction[]
+}
+
+model RouteHasShops {
+  route_id        String
+  shop_id         String
+  sequence_order  Int
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+  route           Route    @relation(fields: [route_id], references: [id])
+  shop            Shop     @relation(fields: [shop_id], references: [id])
+
+  @@id([route_id, shop_id])
+}
+
+model Order {
+  id            String   @id @default(uuid())
+  shop_id       String
+  total_amount  Float
+  status        String   // pending, complete , returned
+  type          String   // credit, debit
+  discount      Float    @default(0)
+  payment_type  String   @default("cash") // cash, credit
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+  shop          Shop     @relation(fields: [shop_id], references: [id])
+  order_products OrderHasProducts[]
+  trip_orders   TripHasOrders[]
+}
+
+model OrderHasProducts {
+  order_id    String
+  product_id  String
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  order       Order    @relation(fields: [order_id], references: [id])
+  product     Product  @relation(fields: [product_id], references: [key])
+
+  @@id([order_id, product_id])
+}
+
+model Trip {
+  id           String   @id @default(uuid())
+  route_id     String
+  assigned_to  String
+  verified_by  String?
+  trip_date    DateTime @default(now())
+  is_verified  Boolean  @default(false)
+  is_completed Boolean  @default(false)
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+  route        Route    @relation(fields: [route_id], references: [id])
+  trip_orders  TripHasOrders[]
+}
+
+model TripHasOrders {
+  route_id       String
+  shop_id        String
+  sequence_order Int
+  trip_id        String
+  order_id       String
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+  trip          Trip     @relation(fields: [trip_id], references: [id])
+  order         Order    @relation(fields: [order_id], references: [id])
+  is_visited  Boolean   @default(false)
+  visited_at  DateTime?
+
+  @@id([trip_id, order_id])
+}
+
+model Transaction {
+  id              String   @id @default(uuid())
+  shop_id         String
+  order_id        String?   
+  amount          Float
+  date_created    DateTime
+  date_paid       DateTime?
+  payment_method  String   // cash
+  type            String   // credit, debit
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+  shop            Shop     @relation(fields: [shop_id], references: [id])
 }

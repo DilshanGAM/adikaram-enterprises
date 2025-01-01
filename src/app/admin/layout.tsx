@@ -10,6 +10,7 @@ import {
 } from "react-icons/fa";
 import { FaShop, FaUserGroup } from "react-icons/fa6";
 import { MdWarehouse } from "react-icons/md";
+import { RiRoadMapFill } from "react-icons/ri";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -35,16 +36,16 @@ export default function AdminLayout({
 		<div className="flex h-screen">
 			{/* Sidebar */}
 			<div
-				className={`${
+				className={`sticky top-0 h-screen ${
 					isOpen ? "w-64" : "w-16"
 				} bg-pepsiBlue text-white flex flex-col transition-all duration-300`}
 			>
 				{/* Sidebar Header */}
-				<div className="flex items-center gap-2 p-4">
+				<div className="flex items-center  justify-center gap-2 p-2 md:p-4">
 					<img
 						src="/favicon.png"
 						alt="Adikaram Enterprises Logo"
-						className="w-8 h-8 cursor-pointer border-white rounded-full border-[2px] bg-white"
+						className="w-6 h-6 md:h-8 md:w-8 cursor-pointer border-white rounded-full border-[2px] bg-white"
 						onClick={toggleSidebar} // Logo acts as the toggle button
 					/>
 					{isOpen && (
@@ -71,6 +72,12 @@ export default function AdminLayout({
 						isOpen={isOpen}
 					/>
 					<NavItem
+						link="/admin/trips"
+						icon={<RiRoadMapFill />}
+						label="Routes"
+						isOpen={isOpen}
+					/>
+					<NavItem
 						link="/admin/routes"
 						icon={<FaRoute />}
 						label="Routes"
@@ -94,14 +101,17 @@ export default function AdminLayout({
 						label="Bills"
 						isOpen={isOpen}
 					/>
-					<NavItem
+					{
+						/* for future use */
+					}
+					{/* <NavItem
 						link="/admin/settings"
 						icon={<FaCog />}
 						label="Settings"
 						isOpen={isOpen}
-					/>
+					/> */}
 					<NavItem
-						link="/logout"
+						link="/"
 						icon={<FaSignOutAlt />}
 						label="Logout"
 						isOpen={isOpen}
@@ -110,7 +120,7 @@ export default function AdminLayout({
 			</div>
 
 			{/* Main Content */}
-			<div className="flex-1 bg-gray-100">{children}</div>
+			<div className="flex-1 overflow-auto bg-gray-100">{children}</div>
 		</div>
 	);
 }
@@ -123,14 +133,8 @@ interface NavItemProps {
 }
 
 const NavItem: React.FC<NavItemProps> = ({ icon, label, isOpen, link }) => {
-	
 	const pathname = usePathname();
-	let isActive = false;
-	if(link === "/admin"){
-		isActive = pathname === link;
-	}else{
-		isActive = pathname.includes(link);
-	}
+	const isActive = pathname === link || pathname.includes(link);
 
 	return (
 		<Link

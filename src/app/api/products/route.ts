@@ -6,16 +6,47 @@ export const dynamic = "force-dynamic";
 const prisma = new PrismaClient();
 
 export async function GET(req: NextRequest) {
-	let userHeader = req.headers.get("user");
-	let user: UserType | null = userHeader ? JSON.parse(userHeader) : null;
-	if (!user) {
-		return NextResponse.json({ message: "User not found" }, { status: 404 });
-	}
+    const userHeader = req.headers.get("user");
+    const user: UserType | null = userHeader ? JSON.parse(userHeader) : null;
 
-	const products = await prisma.product.findMany();
-	prisma.$disconnect();
-	return NextResponse.json({ message: "Products found", products });
+    if (!user) {
+        return NextResponse.json({ message: "User not found" }, { status: 404 });
+    }
+
+    const searchParams = req.nextUrl.searchParams;
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const pageSize = parseInt(searchParams.get("pageSize") || "10", 10);
+
+    try {
+        const totalItems = await prisma.product.count();
+
+        const products = await prisma.product.findMany({
+            skip: (page - 1) * pageSize,
+            take: pageSize,
+        });
+
+        const totalPages = Math.ceil(totalItems / pageSize);
+
+        return NextResponse.json({
+            message: "Products found",
+            products,
+            pagination: {
+                currentPage: page,
+                pageSize,
+                totalItems,
+                totalPages
+            }
+        });
+    } catch (e: any) {
+        return NextResponse.json(
+            { message: "Error fetching products", error: e },
+            { status: 500 }
+        );
+    } finally {
+        await prisma.$disconnect();
+    }
 }
+
 
 export async function POST(req: NextRequest) {
 	const userHeader = req.headers.get("user");

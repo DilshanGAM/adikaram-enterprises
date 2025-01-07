@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/select";
 import toast from "react-hot-toast";
 import axios from "axios";
-import supabase from "@/config/supabase";
 import { BatchType, ProductType } from "@/types/user";
 
 interface BatchFormProps {
@@ -31,12 +30,11 @@ export default function BatchForm({ batch, onSuccess }: BatchFormProps) {
 		exp: batch?.exp || "",
 		cost: batch?.cost || "",
 		labeled_price: batch?.labeled_price || "",
-		purchase_invoice_id: batch?.purchase_invoice_id || "",
-		addedBy: batch?.addedBy || "",
+		purchase_invoice_id: batch?.purchase_invoice_id || ""
 	});
 
 	const [loading, setLoading] = useState(false);
-	const [productList, setProductList] = useState([]);
+    const [productList, setProductList] = useState<ProductType[]>([]);
 	const [productsLoaded, setProductsLoaded] = useState(false);
 
 	useEffect(() => {
@@ -72,13 +70,23 @@ export default function BatchForm({ batch, onSuccess }: BatchFormProps) {
 	};
 
 	const handleSelectChange = (name: string, value: string) => {
+        //find the product from the list
+        const product: ProductType | null = productList.find((p: ProductType) => p.key === value) ?? null;
+        //set default UOM, cost and labeled price
+        setFormData((prev) => ({
+            ...prev,
+            [name]: value,
+            uom: product?.uom||"",
+            cost: product?.default_cost || "",
+            labeled_price: product?.default_labeled_price || ""
+        }));
 		setFormData((prev) => ({ ...prev, [name]: value }));
 	};
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		setLoading(true);
-
+        console.log(formData);
 		setLoading(false);
 	};
 
@@ -89,7 +97,7 @@ export default function BatchForm({ batch, onSuccess }: BatchFormProps) {
                     <Label>Name</Label>
                     <Select
                         value={formData.product_key}
-                        onValueChange={(e:any) => handleSelectChange("product_key", e.target.value)}
+                        onValueChange={(e:any) => {handleSelectChange("product_key", e)}}
                     >
                         <SelectTrigger>Select a product</SelectTrigger>
                         <SelectContent>
@@ -180,18 +188,9 @@ export default function BatchForm({ batch, onSuccess }: BatchFormProps) {
                     onChange={handleChange}
                 />
             </div>
-            <div>
-                <Label>Added By</Label>
-                <Input
-                    type="text"
-                    name="addedBy"
-                    value={formData.addedBy}
-                    onChange={handleChange}
-                />
-            </div>
 
 			<Button type="submit" disabled={loading} className="w-full">
-				{loading ? "Saving..." : batch ? "Update Product" : "Add Product"}
+				{loading ? "Saving..." : batch ? "Update Batch" : "Add Batch"}
 			</Button>
 		</form>
 	);
